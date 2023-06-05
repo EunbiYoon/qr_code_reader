@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR Code Reader</title>
+</head>
+<body>
+    <h1>QR Code Reader</h1>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <button type="submit" name="image_upload">Upload File</button>
+        <input type="file" name="image" accept="image/*">
+    </form>
+
+    <button id="take-photo-btn">Take Photo</button>
+    <canvas id="canvas" style="display: none;"></canvas>
+
+    <div id="result" style="display: none;">
+        <h2>QR Code Result:</h2>
+        <p id="qr_code_data"></p>
+    </div>
+
+    <script>
+        // Get references to the required elements
+        const takePhotoBtn = document.getElementById('take-photo-btn');
+        const canvas = document.getElementById('canvas');
+        const resultDiv = document.getElementById('result');
+        const qrCodeDataP = document.getElementById('qr_code_data');
+
+        // When the "Take Photo" button is clicked
+        takePhotoBtn.addEventListener('click', function () {
+            // Access the device's camera
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function (stream) {
+                    // Create a video element to display the camera stream
+                    const video = document.createElement('video');
+                    video.srcObject = stream;
+                    video.play();
+
+                    // When the video is ready
+                    video.addEventListener('loadedmetadata', function () {
+                        // Set the canvas dimensions to match the video stream
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+
+                        // Draw the video frame on the canvas
+                        const context = canvas.getContext('2d');
+                        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                        // Stop the video stream
+                        stream.getTracks().forEach(track => track.stop());
+
+                        // Convert the canvas image to a base64-encoded data URL
+                        const image_data = canvas.toDataURL('image/png');
+
+                        // Create a hidden input field to store the image data
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.setAttribute('type', 'hidden');
+                        hiddenInput.setAttribute('name', 'image_data');
+                        hiddenInput.setAttribute('value', image_data);
+
+                        // Append the hidden input field to the form
+                        const form = document.querySelector('form');
+                        form.appendChild(hiddenInput);
+
+                        // Submit the form
+                        form.submit();
+                    });
+                })
+                .catch(function (error) {
+                    console.error('Error accessing camera:', error);
+                });
+        });
+    </script>
+</body>
+</html>
